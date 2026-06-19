@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-const maxBucCapacity = 15
+// const maxBucCapacity = 15
 
 type token_bucket struct {
 	capacity        float64

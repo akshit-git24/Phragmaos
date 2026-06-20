@@ -26,6 +26,7 @@ func (t *token_bucket) Allow() bool{
     // Calculated the number of tokens already would be in bucket upto time.
 	tokensRefilled := timeElapsed * t.refillRate
 
+	
     // Capacity check and update
 	if tokensRefilled >= t.capacity {
 		t.tokens = t.capacity

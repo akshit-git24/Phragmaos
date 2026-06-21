@@ -4,13 +4,14 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
 	"strconv"
+	"strings"
 )
 
 type App struct {
 	store *Store
 }
-
 
 
 func Run(){
@@ -20,7 +21,19 @@ func Run(){
 	mux.HandleFunc("GET /welcome",app.ping)
     
 	log.Printf("| Started the server :")
-    http.ListenAndServe(":8080", mux)
+     
+	addr := getEnvOrDefault("LISTEN_PORT",":8080")
+    if addr == ""{
+		addr = ":8080"
+	}
+
+	host := addr
+	if strings.HasPrefix(addr, ":") {
+		host = "localhost" + addr
+	}
+	log.Printf("| API listening on http://%s\n", host)
+
+    http.ListenAndServe(addr, mux)
 
 }
 
@@ -30,7 +43,6 @@ func getUserIp(r *http.Request) string{
 	if err != nil {
 		return r.RemoteAddr
 	}
-
 	return ip
 }
 
@@ -53,3 +65,11 @@ func (a *App)ping(w http.ResponseWriter, r *http.Request){
 	   _, _ = w.Write([]byte(" Too many Requests! Limit Applied"))
 	}
 }
+
+func getEnvOrDefault(key, defaultValue string) string {
+	if value := strings.TrimSpace(os.Getenv(key)); value != "" {
+		return value
+	}
+	return defaultValue
+}
+

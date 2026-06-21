@@ -1,6 +1,7 @@
 package phragmaos
 
 import (
+	"math"
 	"sync"
 	"time"
 )
@@ -15,8 +16,14 @@ type token_bucket struct {
 	mu              sync.Mutex
 }
 
+type Result struct {
+    Allowed bool
+	Remaining int
+    RetryAfter int
+}
 
-func (t *token_bucket) Allow() bool{
+
+func (t *token_bucket) Allow() Result{
 	t.mu.Lock()
 	defer t.mu.Unlock()
     
@@ -40,8 +47,17 @@ func (t *token_bucket) Allow() bool{
     if t.tokens >= 1 {
 		//reduce one token for each request allowance
 		t.tokens = t.tokens - 1
-		return true
+		result := Result{
+           Allowed: true,
+		   Remaining: int(t.tokens),
+		   RetryAfter: 0,
+		}
+		return result
 	}
-    
-	return false
+    result := Result{
+           Allowed: false,
+		   Remaining: int(t.tokens),
+		   RetryAfter: int(math.Ceil((1 - t.tokens) / t.refillRate)),
+		}
+	return result
 }

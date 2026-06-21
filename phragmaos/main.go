@@ -4,6 +4,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"strconv"
 )
 
 type App struct {
@@ -18,7 +19,7 @@ func Run(){
 	app := &App{store: &Store{}}
 	mux.HandleFunc("GET /welcome",app.ping)
     
-	log.Printf("Started the server :")
+	log.Printf("| Started the server :")
     http.ListenAndServe(":8080", mux)
 
 }
@@ -38,15 +39,17 @@ func (a *App)ping(w http.ResponseWriter, r *http.Request){
     ip :=  getUserIp(r)
 	bucket := a.store.GetOrCreate(ip)
 
-	allowed := bucket.Allow()
+	result := bucket.Allow()
+    //Set these manuall headers before  WriteHeader call, because it cause direct flush of the response . The writes called after this functions aren't considered.
+	w.Header().Set("X-RateLimit-Limit", "15")
+	w.Header().Set("X-RateLimit-Remaining", strconv.Itoa(result.Remaining))
 
-	if allowed {
+	if result.Allowed {
 	   w.WriteHeader(http.StatusOK)
 	   _, _ = w.Write([]byte("Allowed"))
 	}else{
-		w.WriteHeader(http.StatusTooManyRequests)
+	   w.Header().Set("Retry-After",strconv.Itoa(result.RetryAfter))
+	   w.WriteHeader(http.StatusTooManyRequests)
 	   _, _ = w.Write([]byte(" Too many Requests! Limit Applied"))
 	}
-	
-     
 }

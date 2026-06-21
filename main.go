@@ -1,12 +1,19 @@
 package main
 
 import (
-	"fmt" 
+	"fmt"
+	"log"
+
 	p "phragmaos"
 
+	"github.com/joho/godotenv"
 )
 
-func main(){
-	fmt.Println("Hello from Phragmaos!") 
-    p.Run()
+func main() {
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found, using system environment variables")
+	}
+
+	fmt.Println("Hello from Phragmaos!")
+	p.Run()
 }

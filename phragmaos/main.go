@@ -11,9 +11,20 @@ import (
 
 type App struct {
 	store *Store
+	extractor IdentifierExtractor
 }
 
+type IdentifierExtractor interface {
+    Extract(r *http.Request) string
+}
 
+type IPExtractor struct{}
+type APIKeyExtractor struct{}
+
+
+// func (id *IdentifierExtractor)Extract(r *http.Request) string{
+// 	return ""
+// }
 func Run(){
 	mux := http.NewServeMux()
 
@@ -72,4 +83,11 @@ func getEnvOrDefault(key, defaultValue string) string {
 	}
 	return defaultValue
 }
+
+// func getExtractor(t string) IdentifierExtractor {
+//     if t == "apikey" {
+//         return &APIKeyExtractor{}
+//     }
+//     return &IPExtractor{} // default
+// }
 

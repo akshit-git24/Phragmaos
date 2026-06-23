@@ -84,6 +84,7 @@ func getEnvOrDefault(key, defaultValue string) string {
 	return defaultValue
 }
 
+
 // func getExtractor(t string) IdentifierExtractor {
 //     if t == "apikey" {
 //         return &APIKeyExtractor{}

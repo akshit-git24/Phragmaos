@@ -18,19 +18,38 @@ type IdentifierExtractor interface {
     Extract(r *http.Request) string
 }
 
+// Rate Limiting params
 type IPExtractor struct{}
 type APIKeyExtractor struct{}
 
+func (e *IPExtractor) Extract(r *http.Request) (string){
+	ip,_,err := net.SplitHostPort(r.RemoteAddr)
 
-// func (id *IdentifierExtractor)Extract(r *http.Request) string{
-// 	return ""
-// }
+	if err != nil {
+		return r.RemoteAddr
+	}
+	return ip
+}
+
+func (e *APIKeyExtractor)Extract(r *http.Request) (string){
+	 api_key := r.Header.Get("X-API-KEY")
+     return api_key
+}
+
 func Run(){
 	mux := http.NewServeMux()
-
-	app := &App{store: &Store{}}
-	mux.HandleFunc("GET /welcome",app.ping)
+    extractorType := os.Getenv("EXTRACTOR")
+	app := &App{
+		store: &Store{},
+		extractor: getExtractor(os.Getenv("EXTRACTOR")),
+    }
+	mux.HandleFunc("GET /welcome",app.ping) 
     
+	if extractorType == ""{
+		extractorType = "IP"
+	}
+    log.Printf("| Rate Limit Model  : %s ",extractorType)
+
 	log.Printf("| Started the server :")
      
 	addr := getEnvOrDefault("LISTEN_PORT",":8080")
@@ -48,22 +67,21 @@ func Run(){
 
 }
 
-func getUserIp(r *http.Request) string{
-    ip,_,err := net.SplitHostPort(r.RemoteAddr)
-
-	if err != nil {
-		return r.RemoteAddr
-	}
-	return ip
+func getExtractor(t string) (IdentifierExtractor){
+	 if t =="apikey" || t =="APIKEY" || t=="API_KEY" || t=="API-KEY"{
+		return &APIKeyExtractor{}
+	 }
+    return &IPExtractor{}
 }
 
 func (a *App)ping(w http.ResponseWriter, r *http.Request){
 
-    ip :=  getUserIp(r)
+    ip :=  a.extractor.Extract(r)
+	
 	bucket := a.store.GetOrCreate(ip)
 
 	result := bucket.Allow()
-    //Set these manuall headers before  WriteHeader call, because it cause direct flush of the response . The writes called after this functions aren't considered.
+    //Set these manual headers before WriteHeader call, because it cause direct flush of the response . The writes called after this functions aren't considered.
 	w.Header().Set("X-RateLimit-Limit", "15")
 	w.Header().Set("X-RateLimit-Remaining", strconv.Itoa(result.Remaining))
 

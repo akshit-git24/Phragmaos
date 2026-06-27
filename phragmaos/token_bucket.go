@@ -2,25 +2,24 @@ package phragmaos
 
 import (
 	"math"
-	"sync"
 	"time"
 )
 
 // const maxBucCapacity = 15
 
-type token_bucket struct {
-	capacity        float64
-	tokens          float64
-	refillRate      float64
-	lastRefillTime  time.Time 
-	mu              sync.Mutex
-}
+// type token_bucket struct {
+// 	capacity        float64
+// 	tokens          float64
+// 	refillRate      float64
+// 	lastRefillTime  time.Time 
+// 	mu              sync.Mutex
+// }
 
-type Result struct {
-    Allowed bool
-	Remaining int
-    RetryAfter int
-}
+// type Result struct {
+//     Allowed bool
+// 	Remaining int
+//     RetryAfter int
+// }
 
 
 func (t *token_bucket) Allow() Result{

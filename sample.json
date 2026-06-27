@@ -1,0 +1,7 @@
+{
+  "endpoints": [
+    { "path": "/search", "limit": 5, "refillRate": 1 },
+    { "path": "/upload", "limit": 2, "refillRate": 1 },
+    { "path": "/welcome", "limit": 15, "refillRate": 2 }
+  ]
+}

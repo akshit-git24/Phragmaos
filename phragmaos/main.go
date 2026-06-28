@@ -44,8 +44,11 @@ func Run(){
 
 	var cfg Config
     if err == nil {
-       json.Unmarshal(data, &cfg)
-	   log.Printf("Config :",&cfg)
+        if marshal_err := json.Unmarshal(data, &cfg); marshal_err != nil {
+	      log.Fatal("json marshalling error :",marshal_err)
+	   }else {
+		  log.Printf("Json file configured successfully!")
+	   }
 	}else{
 		log.Printf("No config setted")
 		log.Fatal(err)

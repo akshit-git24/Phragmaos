@@ -2,21 +2,16 @@ package phragmaos
 
 
 import (
-	"sync"
+	_"sync"
 	"time"
 )
 
-type Store struct {
-	buckets sync.Map  // key is string of IP/API and value is the pointer of the bucket in memory
-}
-
-
-func (s *Store) GetOrCreate(inp string) *token_bucket {
+func (s *Store) GetOrCreate(inp string,  cfg *EndpointConfig) *token_bucket {
 
 	newBucket := &token_bucket{
-		capacity:  15,
-		tokens:  15,
-		refillRate: 1,
+		capacity:  cfg.Limit,
+		tokens:  cfg.Limit,
+		refillRate: cfg.RefillRate,
 		lastRefillTime: time.Now(),
 	}
 

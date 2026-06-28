@@ -1,6 +1,7 @@
 package phragmaos
 
 import (
+	"encoding/json"
 	"log"
 	"net"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 type App struct {
 	store *Store
 	extractor IdentifierExtractor
+	config   *Config
 }
 
 type IdentifierExtractor interface {
@@ -37,11 +39,27 @@ func (e *APIKeyExtractor)Extract(r *http.Request) (string){
 }
 
 func Run(){
+
+	data,err := os.ReadFile("sample.json")
+
+	var cfg Config
+    if err == nil {
+        if marshal_err := json.Unmarshal(data, &cfg); marshal_err != nil {
+	      log.Fatal("json marshalling error :",marshal_err)
+	   }else {
+		  log.Printf("Json file configured successfully!")
+	   }
+	}else{
+		log.Printf("No config setted")
+		log.Fatal(err)
+	}
+	
 	mux := http.NewServeMux()
     extractorType := os.Getenv("EXTRACTOR")
 	app := &App{
 		store: &Store{},
 		extractor: getExtractor(os.Getenv("EXTRACTOR")),
+		config: &cfg,
     }
 	mux.HandleFunc("GET /welcome",app.ping) 
     
@@ -74,11 +92,13 @@ func getExtractor(t string) (IdentifierExtractor){
     return &IPExtractor{}
 }
 
-func (a *App)ping(w http.ResponseWriter, r *http.Request){
+func (a *App) ping(w http.ResponseWriter, r *http.Request){
 
     ip :=  a.extractor.Extract(r)
-	
-	bucket := a.store.GetOrCreate(ip)
+
+	endpoints := a.config.findEndpoint(r.URL.Path)
+    key := ip + ":" + r.URL.Path
+	bucket := a.store.GetOrCreate(key,&endpoints)
 
 	result := bucket.Allow()
     //Set these manual headers before WriteHeader call, because it cause direct flush of the response . The writes called after this functions aren't considered.
@@ -102,7 +122,29 @@ func getEnvOrDefault(key, defaultValue string) string {
 	return defaultValue
 }
 
+// func getEnvOrDefaultInt(key string, defaultValue int) int {
+//     if val := strings.TrimSpace(os.Getenv(key)); val != "" {
+//         if parsed, err := strconv.Atoi(val); err == nil {
+//             return parsed
+//         }
+//     }
+//     return defaultValue
+// }
 
+func (c *Config) findEndpoint(path string) EndpointConfig {
+    for _, e := range c.Endpoints {
+        if e.Path == path {
+            log.Printf("e :",e)
+            return e
+        }
+    }
+    // default if path not in config
+    return EndpointConfig{
+        Path:       path,
+        Limit:      15,
+        RefillRate: 1,
+    }
+}
 // func getExtractor(t string) IdentifierExtractor {
 //     if t == "apikey" {
 //         return &APIKeyExtractor{}
